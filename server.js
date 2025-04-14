@@ -272,9 +272,11 @@ app.get("/api/sleep_symptoms", (req, res) => {
 });
 
 app.post("/api/sleep_symptoms", (req, res) => {
+    console.log("Incoming symptom:", req.body);
     const result = validateSymptom(req.body);
 
     if (result.error) {
+        console.error("Validation error:", result.error.details);
         return res.status(400).send(result.error.details[0].message);
     }
 
@@ -297,7 +299,7 @@ const validateSymptom = (symptom) => {
         duration: Joi.number().integer().min(1).max(1440).required(),
         severity: Joi.number().integer().min(1).max(10).required(),
         date: Joi.string().pattern(/^\d{4}[-/]\d{2}[-/]\d{2}$/).required(),
-        time: Joi.string().pattern(/^\d{2}:\d{2}$/).required(),
+        time: Joi.string().pattern(/^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i).required(),
         notes: Joi.string().max(500)
     });
 
