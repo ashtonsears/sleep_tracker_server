@@ -258,7 +258,6 @@ app.get("/api/disorders", (req, res) => {
 
 let symptoms = [
     {
-        _id: 1,
         symptom: "Symptom Name",
         duration: 1,
         severity: 1,
@@ -280,7 +279,6 @@ app.post("/api/sleep_symptoms", (req, res) => {
     }
 
     const symptom = {
-        _id: symptoms.length + 1,
         symptom: req.body.symptom,
         duration: req.body.duration,
         severity: req.body.severity,
@@ -295,7 +293,6 @@ app.post("/api/sleep_symptoms", (req, res) => {
 
 const validateSymptom = (symptom) => {
     const schema = Joi.object({
-        _id: Joi.allow(""),
         symptom: Joi.string().min(3).max(50).required(),
         duration: Joi.number().integer().min(1).max(1440).required(),
         severity: Joi.number().integer().min(1).max(10).required(),
