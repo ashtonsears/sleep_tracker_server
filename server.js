@@ -1,12 +1,11 @@
 const express = require("express");
-const cors = require("cors");
+const cors = require('cors');
 const app = express();
+const Joi = require("joi");
 app.use(express.static("public"));
+app.use("/uploads", express.static("uploads"));
+app.use(express.json());
 app.use(cors());
-
-app.get("/", (req, res) => {
-    res.sendFile(__dirname + "/index.html");
-});
 
 app.get("/api/disorders", (req, res) => {
     const disorders = [
@@ -256,6 +255,56 @@ app.get("/api/disorders", (req, res) => {
     ]
     res.send(disorders);
 });
+
+let symptoms = [
+    {
+        _id: 1,
+        symptom: "Symptom Name",
+        duration: 1,
+        severity: 1,
+        date: "04/14/2025",
+        time: "12:00 am",
+        notes: "Notes"
+    }
+]
+
+app.get("/api/sleep_symptoms", (req, res) => {
+    res.send(symptoms);
+});
+
+app.post("/api/sleep_symptoms", (req, res) => {
+    const result = validateSymptom(req.body);
+
+    if (result.error) {
+        return res.status(400).send(result.error.details[0].message);
+    }
+
+    const symptom = {
+        _id: symptoms.length + 1,
+        symptom: req.body.symptom,
+        duration: req.body.duration,
+        severity: req.body.severity,
+        date: req.body.date,
+        time: req.body.time,
+        notes: req.body.notes
+    }
+
+    symptoms.push(symptom);
+    res.status(200).send(symptom);
+});
+
+const validateSymptom = (symptom) => {
+    const schema = Joi.object({
+        symptom: Joi.string().min(3).max(50).required(),
+        duration: Joi.number().integer().min(1).max(1440).required(),
+        severity: Joi.number().integer().min(1).max(10).required(),
+        date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).required(),
+        time: Joi.string().pattern(/^\d{2}:\d{2}$/).required(),
+        notes: Joi.string().max(500)
+    });
+
+    return schema.validate(symptom);
+};
 
 app.listen(3000, () => {
     console.log("Server is running on port 3000");
