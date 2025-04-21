@@ -258,7 +258,7 @@ app.get("/api/disorders", (req, res) => {
 
 let symptoms = [
     {
-        id: 1,
+        _id: 1,
         symptom: "Symptom Name",
         duration: 1,
         severity: 1,
@@ -295,8 +295,8 @@ app.post("/api/sleep_symptoms", (req, res) => {
     res.status(200).send(symptom);
 });
 
-app.put("/api/sleep_symptoms/:id", (req, res) => {
-    let symptom = symptoms.find(s => s.id === parseInt(req.params.id));
+app.put("/api/sleep_symptoms/:_id", (req, res) => {
+    let symptom = symptoms.find(s => s._id === parseInt(req.params._id));
     if (!symptom) return res.status(400).send("Symptom with given id was not found.");
 
     const result = validateSymptom(req.body);
@@ -315,8 +315,8 @@ app.put("/api/sleep_symptoms/:id", (req, res) => {
     res.send(symptom);
 });
 
-app.delete("/api/sleep_symptoms/:id", (req, res) => {
-    const symptom = symptoms.find(s => s.id === parseInt(req.params.id));
+app.delete("/api/sleep_symptoms/:_id", (req, res) => {
+    const symptom = symptoms.find(s => s._id === parseInt(req.params._id));
 
     if (!symptom) {
         res.status(404).send("Symptom with given id was not found.");
@@ -329,13 +329,12 @@ app.delete("/api/sleep_symptoms/:id", (req, res) => {
 
 const validateSymptom = (symptom) => {
     const schema = Joi.object({
-        id: Joi.number().integer().min(1).max(1000),
         symptom: Joi.string().min(3).max(50).required(),
         duration: Joi.number().integer().min(1).max(1440).required(),
         severity: Joi.number().integer().min(1).max(10).required(),
         date: Joi.string().pattern(/^\d{4}[-/]\d{2}[-/]\d{2}$/).required(),
         time: Joi.string().pattern(/^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i).required(),
-        notes: Joi.string().max(500)
+        notes: Joi.string().max(500).allow("").optional()
     });
 
     return schema.validate(symptom);
