@@ -258,6 +258,7 @@ app.get("/api/disorders", (req, res) => {
 
 let symptoms = [
     {
+        id: 1,
         symptom: "Symptom Name",
         duration: 1,
         severity: 1,
@@ -281,6 +282,7 @@ app.post("/api/sleep_symptoms", (req, res) => {
     }
 
     const symptom = {
+        _id: symptoms.length + 1,
         symptom: req.body.symptom,
         duration: req.body.duration,
         severity: req.body.severity,
@@ -293,8 +295,41 @@ app.post("/api/sleep_symptoms", (req, res) => {
     res.status(200).send(symptom);
 });
 
+app.put("/api/sleep_symptoms/:id", (req, res) => {
+    let symptom = symptoms.find(s => s.id === parseInt(req.params.id));
+    if (!symptom) return res.status(400).send("Symptom with given id was not found.");
+
+    const result = validateSymptom(req.body);
+    if (result.error) {
+        res.status(400).send(result.error.details[0].message);
+        return;
+    }
+
+    symptom.symptom = req.body.symptom;
+    symptom.duration = req.body.duration;
+    symptom.severity = req.body.severity;
+    symptom.date = req.body.date;
+    symptom.time = req.body.time;
+    symptom.notes = req.body.notes;
+
+    res.send(symptom);
+});
+
+app.delete("/api/sleep_symptoms/:id", (req, res) => {
+    const symptom = symptoms.find(s => s.id === parseInt(req.params.id));
+
+    if (!symptom) {
+        res.status(404).send("Symptom with given id was not found.");
+    }
+
+    const index = symptoms.indexOf(symptom);
+    symptoms.splice(index, 1);
+    res.send(symptom);
+});
+
 const validateSymptom = (symptom) => {
     const schema = Joi.object({
+        id: Joi.number().integer().min(1).max(1000),
         symptom: Joi.string().min(3).max(50).required(),
         duration: Joi.number().integer().min(1).max(1440).required(),
         severity: Joi.number().integer().min(1).max(10).required(),
