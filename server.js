@@ -352,6 +352,18 @@ app.post("/api/sleep_symptoms", upload.single("img"), async(req, res) => {
         symptoms.img = req.file.filename;
     }
 
+    console.log("req.file:", req.file);
+    console.log("req.body:", req.body);
+
+    const { error } = symptomSchema.validate(req.body);
+    if (error) {
+        return res.status(400).send(`Validation error: ${error}`);
+    }
+
+    if (!req.file) {
+        return res.status(400).send("Validation error: 'img' is required");
+    }
+
     const newSymptom = await symptoms.save();
     res.status(200).send(newSymptom);
 });
@@ -396,8 +408,7 @@ const validateSymptom = (symptom) => {
         severity: Joi.number().min(1).max(10).required(),
         date: Joi.string().pattern(/^\d{2}\/\d{2}\/\d{4}$/).required(),
         time: Joi.string().pattern(/^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i).required(),
-        notes: Joi.string().max(500).allow(""),
-        img: Joi.string().required()
+        notes: Joi.string().max(500).allow("")
     });
 
     return schema.validate(symptom);
