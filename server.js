@@ -30,49 +30,14 @@ mongoose
     });
 
 const sleepSymptomSchema = new mongoose.Schema({
-    _id: {
-        type: Number,
-        required: true,
-        min: 1,
-        max: 1000
-    },
-    symptom: {
-        type: String,
-        required: true,
-        minlength: 3,
-        maxlength: 50
-    },
-    duration: {
-        type: Number,
-        required: true,
-        min: 1,
-        max: 1440
-    },
-    severity: {
-        type: Number,
-        required: true,
-        min: 1,
-        max: 10
-    },
-    date: {
-        type: String,
-        required: true,
-        match: /^\d{4}[-/]\d{2}[-/]\d{2}$/
-    },
-    time: {
-        type: String,
-        required: true,
-        match: /^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i
-    },
-    notes: {
-        type: String,
-        maxlength: 500,
-        default: ""
-    },
-    image: {
-        type: String,
-        required: true
-    }
+    _id: Number,
+    symptom: string,
+    duration: Number,
+    severity: Number,
+    date: String,
+    time: String,
+    notes: String,
+    img: String
 });
 
 const SleepSymptom = mongoose.model("SleepSymptom", sleepSymptomSchema);
@@ -335,6 +300,11 @@ app.get("/api/sleep_symptoms", async(req, res) => {
     res.send(symptoms);
 });
 
+app.get("/api/sleep_symptoms/:_id", async(req, res) => {
+    const symptom = await SleepSymptom.findOne({_id: id});
+    res.send(symptom);
+});
+
 app.post("/api/sleep_symptoms", upload.single("img"), async(req, res) => {
     const result = validateSymptom(req.body);
 
@@ -354,7 +324,7 @@ app.post("/api/sleep_symptoms", upload.single("img"), async(req, res) => {
     });
 
     if(req.file) {
-        symptoms.image = req.file.filename;
+        symptoms.img = req.file.filename;
     }
 
     const newSymptom = await symptoms.save();
@@ -399,10 +369,10 @@ const validateSymptom = (symptom) => {
         symptom: Joi.string().min(3).required(),
         duration: Joi.number().min(1).max(1440).required(),
         severity: Joi.number().min(1).max(10).required(),
-        date: Joi.string().pattern(/^\d{4}[-/]\d{2}[-/]\d{2}$/).required(),
+        date: Joi.string().pattern(/^\d{2}\/\d{2}\/\d{4}$/).required(),
         time: Joi.string().pattern(/^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i).required(),
         notes: Joi.string().max(500).allow(""),
-        image: Joi.string().required()
+        img: Joi.string().required()
     });
 
     return schema.validate(symptom);
