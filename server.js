@@ -350,7 +350,7 @@ app.post("/api/sleep_symptoms", upload.single("img"), async(req, res) => {
     severity: req.body.severity,
     date: req.body.date,
     time: req.body.time,
-    notes: req.body.notes
+    notes: req.body.notes,
     });
 
     if(req.file) {
@@ -379,29 +379,29 @@ app.put("/api/sleep_symptoms/:_id", upload.single("img"), async (req, res) => {
     };
 
     if (req.file) {
-        fieldsToUpdate.img = req.file.path;
+        fieldsToUpdate.img = req.file.filename;
     }
 
     const wentThrough = await SleepSymptom.updateOne({_id: req.params._id}, fieldsToUpdate);
-    const symptom = await SleepSymptom.findOne({ _id: req.params._id });
+    const updatedSymptom = await SleepSymptom.findOne({ _id: req.params._id });
 
-    res.status(200).send(symptom);
+    res.status(200).send(updatedSymptom);
 });
 
 app.delete("/api/sleep_symptoms/:_id", async(req, res) => {
     const symptom = await SleepSymptom.findByIdAndDelete(req.params._id);
-    res.status(200).send(symptom);
+    res.send(symptom);
 });
 
 const validateSymptom = (symptom) => {
     const schema = Joi.object({
         _id: Joi.allow(""),
-        symptom: Joi.string().min(3).max(50).required(),
-        duration: Joi.number().integer().min(1).max(1440).required(),
-        severity: Joi.number().integer().min(1).max(10).required(),
+        symptom: Joi.string().min(3).required(),
+        duration: Joi.number().min(1).max(1440).required(),
+        severity: Joi.number().min(1).max(10).required(),
         date: Joi.string().pattern(/^\d{4}[-/]\d{2}[-/]\d{2}$/).required(),
         time: Joi.string().pattern(/^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i).required(),
-        notes: Joi.string().max(500).allow("").optional(),
+        notes: Joi.string().max(500).allow(""),
         image: Joi.string().required()
     });
 
