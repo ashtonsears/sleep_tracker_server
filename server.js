@@ -350,10 +350,6 @@ app.post("/api/sleep_symptoms", upload.single("img"), async(req, res) => {
     console.log("req.file:", req.file);
     console.log("req.body:", req.body);
 
-    if (error) {
-        return res.status(400).send(`Validation error: ${error}`);
-    }
-
     if (!req.file) {
         return res.status(400).send("Validation error: 'img' is required");
     }
