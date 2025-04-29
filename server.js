@@ -1,14 +1,13 @@
 const express = require("express");
-const cors = require('cors');
 const app = express();
 const Joi = require("joi");
 const multer = require("multer");
-const mongoose = require("mongoose");
-const { ObjectId } = require("mongodb");
+const cors = require('cors');
 app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
 app.use(express.json());
 app.use(cors());
+const mongoose = require("mongoose");
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -370,7 +369,7 @@ app.put("/api/sleep_symptoms/:_id", upload.single("img"), async (req, res) => {
         return;
     }
 
-    const fieldsToUpdate = {
+    let fieldsToUpdate = {
         symptom: req.body.symptom,
         duration: req.body.duration,
         severity: req.body.severity,
