@@ -30,11 +30,6 @@ mongoose
     });
 
 const sleepSymptomSchema = new mongoose.Schema({
-    _id : {
-        type: String,
-        required: true,
-        unique: true
-    },
     symptom: {
         type: String,
         required: true
