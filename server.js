@@ -30,14 +30,39 @@ mongoose
     });
 
 const sleepSymptomSchema = new mongoose.Schema({
-    _id: Number,
-    symptom: string,
-    duration: Number,
-    severity: Number,
-    date: String,
-    time: String,
-    notes: String,
-    img: String
+    _id : {
+        type: String,
+        required: true,
+        unique: true
+    },
+    symptom: {
+        type: String,
+        required: true
+    },
+    duration: {
+        type: Number,
+        required: true
+    },
+    severity: {
+        type: Number,
+        required: true
+    },
+    date: {
+        type: String,
+        required: true
+    },
+    time: {
+        type: String,
+        required: true
+    },
+    notes: {
+        type: String,
+        required: false
+    },
+    img: {
+        type: String,
+        required: true
+    }
 });
 
 const SleepSymptom = mongoose.model("SleepSymptom", sleepSymptomSchema);
