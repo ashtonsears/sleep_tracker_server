@@ -2,10 +2,85 @@ const express = require("express");
 const cors = require('cors');
 const app = express();
 const Joi = require("joi");
+const multer = require("multer");
+const mongoose = require("mongoose");
+const { ObjectId } = require("mongodb");
 app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
 app.use(express.json());
 app.use(cors());
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, "./public/images/");
+    },
+    filename: (req, file, cb) => {
+      cb(null, file.originalname);
+    },
+  });
+
+const upload = multer({ storage: storage });
+
+mongoose
+    .connect("mongodb+srv://ashtonsears:13GFIFuDSuJSrJZ7@cluster0.fhi5zrw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+    .then(() => { 
+        console.log("Connected to MongoDB...");
+    })
+    .catch(error => {
+        console.log("Could not connect to MongoDB...", error)
+    });
+
+const sleepSymptomSchema = new mongoose.Schema({
+    _id: {
+        type: Number,
+        required: true,
+        min: 1,
+        max: 1000
+    },
+    symptom: {
+        type: String,
+        required: true,
+        minlength: 3,
+        maxlength: 50
+    },
+    duration: {
+        type: Number,
+        required: true,
+        min: 1,
+        max: 1440
+    },
+    severity: {
+        type: Number,
+        required: true,
+        min: 1,
+        max: 10
+    },
+    date: {
+        type: String,
+        required: true,
+        match: /^\d{4}[-/]\d{2}[-/]\d{2}$/
+    },
+    time: {
+        type: String,
+        required: true,
+        match: /^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i
+    },
+    notes: {
+        type: String,
+        maxlength: 500,
+        default: ""
+    },
+    image: {
+        type: String,
+        required: true
+    }
+});
+
+const SleepSymptom = mongoose.model("SleepSymptom", sleepSymptomSchema);
+
+app.get("/", (req, res) => {
+    res.sendFile(__dirname + "/index.html");
+});
 
 app.get("/api/disorders", (req, res) => {
     const disorders = [
@@ -256,24 +331,12 @@ app.get("/api/disorders", (req, res) => {
     res.send(disorders);
 });
 
-let symptoms = [
-    {
-        _id: 1,
-        symptom: "Symptom Name",
-        duration: 1,
-        severity: 1,
-        date: "04/14/2025",
-        time: "12:00 am",
-        notes: "Notes"
-    }
-]
-
-app.get("/api/sleep_symptoms", (req, res) => {
+app.get("/api/sleep_symptoms", async(req, res) => {
+    const symptoms = await SleepSymptom.find();
     res.send(symptoms);
 });
 
-app.post("/api/sleep_symptoms", (req, res) => {
-    console.log("Incoming symptom:", req.body);
+app.post("/api/sleep_symptoms", upload.single("img"), async(req, res) => {
     const result = validateSymptom(req.body);
 
     if (result.error) {
@@ -281,60 +344,66 @@ app.post("/api/sleep_symptoms", (req, res) => {
         return res.status(400).send(result.error.details[0].message);
     }
 
-    const symptom = {
-        _id: symptoms.length + 1,
-        symptom: req.body.symptom,
-        duration: req.body.duration,
-        severity: req.body.severity,
-        date: req.body.date,
-        time: req.body.time,
-        notes: req.body.notes
+    const symptoms = new SleepSymptom({
+    _id: req.body._id,
+    symptom: req.body.symptom,
+    duration: req.body.duration,
+    severity: req.body.severity,
+    date: req.body.date,
+    time: req.body.time,
+    notes: req.body.notes
+    });
+
+    if(req.file) {
+        symptoms.image = req.file.filename;
     }
 
-    symptoms.push(symptom);
-    res.status(200).send(symptom);
+    const newSymptom = await symptoms.save();
+    res.status(200).send(newSymptom);
 });
 
-app.put("/api/sleep_symptoms/:_id", (req, res) => {
-    let symptom = symptoms.find(s => s._id === parseInt(req.params._id));
-    if (!symptom) return res.status(400).send("Symptom with given id was not found.");
-
+app.put("/api/sleep_symptoms/:_id", upload.single("img"), async (req, res) => {
+    
     const result = validateSymptom(req.body);
     if (result.error) {
         res.status(400).send(result.error.details[0].message);
         return;
     }
 
-    symptom.symptom = req.body.symptom;
-    symptom.duration = req.body.duration;
-    symptom.severity = req.body.severity;
-    symptom.date = req.body.date;
-    symptom.time = req.body.time;
-    symptom.notes = req.body.notes;
+    const fieldsToUpdate = {
+        symptom: req.body.symptom,
+        duration: req.body.duration,
+        severity: req.body.severity,
+        date: req.body.date,
+        time: req.body.time,
+        notes: req.body.notes
+    };
 
-    res.send(symptom);
-});
-
-app.delete("/api/sleep_symptoms/:_id", (req, res) => {
-    const symptom = symptoms.find(s => s._id === parseInt(req.params._id));
-
-    if (!symptom) {
-        res.status(404).send("Symptom with given id was not found.");
+    if (req.file) {
+        fieldsToUpdate.img = req.file.path;
     }
 
-    const index = symptoms.indexOf(symptom);
-    symptoms.splice(index, 1);
-    res.send(symptom);
+    const wentThrough = await SleepSymptom.updateOne({_id: req.params._id}, fieldsToUpdate);
+    const symptom = await SleepSymptom.findOne({ _id: req.params._id });
+
+    res.status(200).send(symptom);
+});
+
+app.delete("/api/sleep_symptoms/:_id", async(req, res) => {
+    const symptom = await SleepSymptom.findByIdAndDelete(req.params._id);
+    res.status(200).send(symptom);
 });
 
 const validateSymptom = (symptom) => {
     const schema = Joi.object({
+        _id: Joi.allow(""),
         symptom: Joi.string().min(3).max(50).required(),
         duration: Joi.number().integer().min(1).max(1440).required(),
         severity: Joi.number().integer().min(1).max(10).required(),
         date: Joi.string().pattern(/^\d{4}[-/]\d{2}[-/]\d{2}$/).required(),
         time: Joi.string().pattern(/^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i).required(),
-        notes: Joi.string().max(500).allow("").optional()
+        notes: Joi.string().max(500).allow("").optional(),
+        image: Joi.string().required()
     });
 
     return schema.validate(symptom);
